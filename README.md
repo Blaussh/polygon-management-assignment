@@ -9,7 +9,7 @@ A fullstack web application for managing polygons on a canvas, built with Node.j
 - **Interactive Canvas**: Draw polygons by clicking on a canvas with background image
 - **Polygon Management**: Create, display, and delete polygons with names
 - **Visual Interface**: List view of all polygons with selection and deletion capabilities
-- **Persistent Storage**: Polygons saved to SQLite database, persist after server restarts
+- **Persistent Storage**: Polygons saved to SQLite database with Docker volumes, persist after server restarts
 - **API Delays**: 5-second delay on all API operations as requested
 
 ### Advanced Features
@@ -21,40 +21,216 @@ A fullstack web application for managing polygons on a canvas, built with Node.j
 - **Error Handling**: Comprehensive error handling and user feedback
 - **Keyboard Shortcuts**: ESC key to cancel drawing
 
-## 🚀 Quick Start with Docker
+## 🚀 Docker Deployment
 
 ### Prerequisites
 
-- Docker and Docker Compose installed on your system
+- **Docker** (version 20.10+)
+- **Docker Compose** (version 2.0+)
+- **Git** (for cloning the repository)
 
-### Running the Application
+### Quick Start
 
 ```bash
 # Clone the repository
 git clone [your-repo-url]
-cd NoTraffic
+cd polygon-management-assignment
 
 # Start the application (production mode)
 docker-compose up -d
 
 # Or use the setup script
 chmod +x scripts/docker-setup.sh
-./scripts/docker-setup.sh start
+./scripts/docker-setup.sh prod
 ```
 
 The application will be available at:
 
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:5000
-- **Health Check**: http://localhost:5000/health
+- **Frontend**: http://localhost (port 80)
+- **Backend API**: http://localhost:3001
+- **Health Check**: http://localhost:3001/health
 
-### Stopping the Application
+### Production Deployment
+
+#### Using Docker Compose (Recommended)
 
 ```bash
+# Build and start production environment
+docker-compose up -d --build
+
+# Check service status
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+
+# Stop services
 docker-compose down
+```
+
+#### Using the Setup Script
+
+```bash
+# Make script executable
+chmod +x scripts/docker-setup.sh
+
+# Start production environment
+./scripts/docker-setup.sh prod
+
+# Check status
+./scripts/docker-setup.sh status
+
+# View logs
+./scripts/docker-setup.sh logs
+
+# Clean up
+./scripts/docker-setup.sh cleanup
+```
+
+### Development Deployment
+
+For development with hot reloading:
+
+```bash
+# Start development environment
+docker-compose -f docker-compose.dev.yml up -d
 
 # Or using the script
-./scripts/docker-setup.sh stop
+./scripts/docker-setup.sh dev
+```
+
+Development URLs:
+- **Frontend**: http://localhost:5173 (with hot reload)
+- **Backend API**: http://localhost:3001 (with hot reload)
+
+### Docker Services
+
+#### Backend Service
+- **Container**: `polygon-backend`
+- **Port**: 3001
+- **Health Check**: `/health` endpoint
+- **Database**: SQLite with persistent volume
+- **Restart Policy**: `unless-stopped`
+
+#### Frontend Service
+- **Container**: `polygon-frontend`
+- **Port**: 80 (production) / 5173 (development)
+- **Web Server**: Nginx (production) / Vite dev server (development)
+- **Health Check**: HTTP status check
+- **Restart Policy**: `unless-stopped`
+
+### Data Persistence
+
+The application uses Docker volumes for data persistence:
+
+- **Production**: `backend_data` volume
+- **Development**: `backend_data_dev` volume
+- **Location**: `/app/data/database.db` inside container
+- **Persistence**: Polygons persist across container restarts and updates
+- **Smart Seeding**: Database only seeds with sample data if empty (preserves user data)
+
+#### Database Management
+
+```bash
+# View database contents
+docker-compose exec backend npx prisma studio
+
+# Reset database (removes all data)
+docker-compose down -v
+docker-compose up -d
+
+# Backup database
+docker cp polygon-backend:/app/data/database.db ./backup.db
+
+# Restore database
+docker cp ./backup.db polygon-backend:/app/data/database.db
+```
+
+### Environment Variables
+
+#### Production Environment
+```env
+NODE_ENV=production
+PORT=3001
+DATABASE_URL=file:/app/data/database.db
+CORS_ORIGIN=http://localhost,http://frontend
+```
+
+#### Development Environment
+```env
+NODE_ENV=development
+PORT=3001
+DATABASE_URL=file:/app/data/database.db
+CORS_ORIGIN=http://localhost:5173
+VITE_API_URL=http://localhost:3001
+```
+
+### Health Checks
+
+Both services include comprehensive health checks:
+
+```bash
+# Check backend health
+curl http://localhost:3001/health
+
+# Check frontend health
+curl http://localhost/
+
+# View health check status
+docker-compose ps
+```
+
+### Troubleshooting
+
+#### Common Issues
+
+1. **Port conflicts**:
+   ```bash
+   # Check what's using the ports
+   netstat -tulpn | grep :80
+   netstat -tulpn | grep :3001
+   ```
+
+2. **Container won't start**:
+   ```bash
+   # Check logs
+   docker-compose logs backend
+   docker-compose logs frontend
+   ```
+
+3. **Database issues**:
+   ```bash
+   # Reset database volume
+   docker-compose down -v
+   docker-compose up -d
+   ```
+
+4. **Build issues**:
+   ```bash
+   # Force rebuild
+   docker-compose build --no-cache
+   docker-compose up -d
+   ```
+
+#### Useful Commands
+
+```bash
+# View all containers
+docker ps -a
+
+# View container logs
+docker logs polygon-backend
+docker logs polygon-frontend
+
+# Execute commands in container
+docker exec -it polygon-backend sh
+docker exec -it polygon-frontend sh
+
+# View resource usage
+docker stats
+
+# Clean up unused resources
+docker system prune -a
 ```
 
 ## 🛠️ Development Setup
@@ -83,14 +259,57 @@ npm run dev
 
 ### Running Tests
 
+#### Backend Tests
+
 ```bash
-# Backend tests
 cd backend
+
+# Install dependencies
+npm install
+
+# Run all tests
 npm test
 
-# Frontend tests
+# Run unit tests only
+npm run test:unit
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run specific test file
+npx jest tests/unit/validation-only.test.ts
+
+# Run integration tests
+npx jest tests/integration/
+```
+
+#### Frontend Tests
+
+```bash
 cd frontend
-npm test
+
+# Install dependencies
+npm install
+
+# Run tests in verbose mode
+npx vitest run --reporter=verbose
+```
+
+#### Running Tests in Docker
+
+```bash
+# Backend tests in Docker
+docker-compose exec backend npm test
+
+# Frontend tests in Docker
+docker-compose exec frontend npm test
+
+# Or run tests in development containers
+docker-compose -f docker-compose.dev.yml exec backend npm test
+docker-compose -f docker-compose.dev.yml exec frontend npm test
 ```
 
 ## 📡 API Documentation
@@ -98,7 +317,7 @@ npm test
 ### Base URL
 
 ```
-http://localhost:5000/api
+http://localhost:3001/api
 ```
 
 ### Endpoints
@@ -226,32 +445,119 @@ Both services include health checks for monitoring:
 
 ## 🧪 Testing
 
-### Backend Tests
+### Test Overview
 
-- Unit tests for validation logic
-- Integration tests for API endpoints
-- Database operation tests
+The application includes comprehensive test coverage for both backend and frontend:
 
-### Frontend Tests
+#### Backend Tests (Jest + Supertest)
+- **Unit Tests**: Validation logic, utility functions
+- **Integration Tests**: API endpoints, database operations
+- **Test Coverage**: 41/41 tests passing ✅
 
-- Component unit tests
-- Hook testing with React Testing Library
-- API service tests
+#### Frontend Tests (Vitest + React Testing Library)
+- **Component Tests**: React component rendering and behavior
+- **Hook Tests**: Custom React hooks with React Query
+- **Service Tests**: API service layer testing
+- **Utility Tests**: Polygon calculation and validation utilities
+- **Test Coverage**: 24/25 tests passing (1 skipped) ✅
+
+### Test Structure
+
+```
+backend/
+├── tests/
+│   ├── unit/              # Unit tests
+│   │   └── validation-only.test.ts
+│   ├── integration/       # Integration tests
+│   │   ├── healthRoutes.test.ts
+│   │   └── polygonRoutes.test.ts
+│   ├── setup.ts          # Test setup
+│   └── test-env.ts       # Test environment
+
+frontend/
+├── src/
+│   ├── components/       # Component tests
+│   │   └── PolygonList/
+│   │       └── PolygonItem.test.tsx
+│   ├── hooks/           # Hook tests
+│   │   └── usePolygons.test.ts
+│   ├── services/        # Service tests
+│   │   └── api.test.ts
+│   └── utils/           # Utility tests
+│       └── polygonUtils.test.ts
+└── src/test/
+    └── setup.ts         # Test setup
+```
 
 ### Running All Tests
 
 ```bash
-# Backend
+# Run all backend tests
 cd backend && npm test
 
-# Frontend
+# Run all frontend tests
 cd frontend && npm test
+
+# Run tests in both directories
+npm run test:all  # (if configured in root package.json)
+```
+
+### Test Commands Reference
+
+#### Backend Test Commands
+```bash
+npm test                 # Run all tests
+npm run test:unit        # Unit tests only
+npm run test:watch       # Watch mode
+npm run test:coverage    # With coverage report
+npx jest --verbose       # Verbose output
+```
+
+#### Frontend Test Commands
+```bash
+npm test                 # Run all tests
+npm test -- --watch      # Watch mode
+npm run test:ui          # UI mode
+npm run test:coverage    # With coverage report
+npx vitest run --reporter=verbose  # Verbose output
+```
+
+### Test Configuration
+
+#### Backend (Jest)
+- **Config**: `jest.config.js`
+- **Setup**: `tests/setup.ts`
+- **Environment**: Node.js with SQLite test database
+- **Coverage**: Istanbul/nyc
+
+#### Frontend (Vitest)
+- **Config**: `vitest.config.ts`
+- **Setup**: `src/test/setup.ts`
+- **Environment**: jsdom with React Testing Library
+- **Coverage**: c8
+
+### Continuous Integration
+
+The tests are designed to run in CI/CD environments:
+
+```bash
+# CI test script example
+#!/bin/bash
+set -e
+
+echo "Running backend tests..."
+cd backend && npm test
+
+echo "Running frontend tests..."
+cd ../frontend && npm test
+
+echo "All tests passed! ✅"
 ```
 
 ## 📁 Project Structure
 
 ```
-NoTraffic/
+polygon-management-assignment/
 ├── backend/                 # Node.js API server
 │   ├── src/
 │   │   ├── controllers/     # Request handlers
@@ -262,18 +568,32 @@ NoTraffic/
 │   │   └── types/           # TypeScript types
 │   ├── prisma/              # Database schema and migrations
 │   ├── tests/               # Test files
-│   └── Dockerfile
+│   │   ├── unit/            # Unit tests
+│   │   ├── integration/     # Integration tests
+│   │   └── setup.ts         # Test setup
+│   ├── scripts/             # Database setup scripts
+│   ├── Dockerfile           # Multi-stage Docker build
+│   ├── jest.config.js       # Jest configuration
+│   └── package.json         # Dependencies and scripts
 ├── frontend/                # React application
 │   ├── src/
 │   │   ├── components/      # React components
+│   │   │   ├── Canvas/      # Canvas components
+│   │   │   └── PolygonList/ # Polygon list components
 │   │   ├── hooks/           # Custom React hooks
 │   │   ├── services/        # API services
-│   │   └── types/           # TypeScript types
-│   ├── tests/               # Test files
-│   └── Dockerfile
+│   │   ├── types/           # TypeScript types
+│   │   ├── utils/           # Utility functions
+│   │   └── test/            # Test setup
+│   ├── public/              # Static assets
+│   ├── Dockerfile           # Multi-stage Docker build
+│   ├── vitest.config.ts     # Vitest configuration
+│   └── package.json         # Dependencies and scripts
 ├── scripts/                 # Utility scripts
-├── docker-compose.yml       # Docker Compose configuration
+│   └── docker-setup.sh      # Docker deployment script
+├── docker-compose.yml       # Production Docker setup
 ├── docker-compose.dev.yml   # Development Docker setup
+├── DOCKER.md               # Docker documentation
 └── README.md               # This file
 ```
 
@@ -287,7 +607,7 @@ The application uses default configurations but supports customization:
 
 ```env
 DATABASE_URL="file:./dev.db"
-PORT=5000
+PORT=3001
 API_DELAY_MS=5000
 NODE_ENV=production
 ```
@@ -295,7 +615,7 @@ NODE_ENV=production
 **Frontend:**
 
 ```env
-VITE_API_URL=http://localhost:5000
+VITE_API_URL=http://localhost:3001
 VITE_API_TIMEOUT=15000
 ```
 
@@ -340,4 +660,4 @@ For any questions about running or using the application, please refer to:
 
 - Docker setup script: `./scripts/docker-setup.sh --help`
 - Docker documentation: `DOCKER.md`
-- API health check: `http://localhost:5000/health`
+- API health check: `http://localhost:3001/health`

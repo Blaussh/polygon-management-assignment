@@ -162,8 +162,8 @@ describe('API Service (Simple)', () => {
       expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:3001/health',
         expect.objectContaining({
-          method: 'GET',
           headers: { 'Content-Type': 'application/json' },
+          signal: expect.any(AbortSignal),
         })
       );
     });

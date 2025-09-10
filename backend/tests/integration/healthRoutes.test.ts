@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { app } from '../../src/app';
+import app from '../../src/app';
 
 describe('Health API Routes', () => {
   describe('GET /health', () => {
@@ -7,19 +7,22 @@ describe('Health API Routes', () => {
       const response = await request(app).get('/health').expect(200);
 
       expect(response.body).toMatchObject({
-        status: 'healthy',
-        timestamp: expect.any(String),
-        uptime: expect.any(Number),
-        database: 'connected',
-        service: 'polygon-api',
-        version: expect.any(String),
+        success: true,
+        data: {
+          status: 'healthy',
+          timestamp: expect.any(String),
+          uptime: expect.any(Number),
+          database: 'connected',
+          environment: expect.any(String),
+          version: expect.any(String),
+        },
       });
     });
 
     it('should include valid timestamp', async () => {
       const response = await request(app).get('/health').expect(200);
 
-      const timestamp = new Date(response.body.timestamp);
+      const timestamp = new Date(response.body.data.timestamp);
       expect(timestamp).toBeInstanceOf(Date);
       expect(timestamp.getTime()).not.toBeNaN();
     });
@@ -27,15 +30,16 @@ describe('Health API Routes', () => {
     it('should include positive uptime', async () => {
       const response = await request(app).get('/health').expect(200);
 
-      expect(response.body.uptime).toBeGreaterThan(0);
+      expect(response.body.data.uptime).toBeGreaterThan(0);
     });
   });
 
-  describe('GET /ping', () => {
+  describe('GET /health/ping', () => {
     it('should return simple pong response', async () => {
-      const response = await request(app).get('/ping').expect(200);
+      const response = await request(app).get('/health/ping').expect(200);
 
       expect(response.body).toEqual({
+        success: true,
         message: 'pong',
         timestamp: expect.any(String),
       });
@@ -44,7 +48,7 @@ describe('Health API Routes', () => {
     it('should respond quickly (no API delay)', async () => {
       const startTime = Date.now();
 
-      await request(app).get('/ping').expect(200);
+      await request(app).get('/health/ping').expect(200);
 
       const endTime = Date.now();
       const duration = endTime - startTime;
