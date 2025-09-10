@@ -62,7 +62,9 @@ export class PolygonService {
 
       logger.info(`Retrieved ${polygons.length} polygons`);
 
-      return polygons.map(polygon => this.transformPolygonEntity(polygon));
+      return polygons.map((polygon: any) =>
+        this.transformPolygonEntity(polygon)
+      );
     } catch (error) {
       logger.error('Failed to retrieve polygons:', error);
       throw new AppError('Failed to retrieve polygons', 500);
@@ -152,7 +154,7 @@ export class PolygonService {
         };
       }
 
-      const totalPoints = polygons.reduce((sum, polygon) => {
+      const totalPoints = polygons.reduce((sum: number, polygon: any) => {
         try {
           const points = JSON.parse(polygon.points) as Point[];
           return sum + points.length;
@@ -161,9 +163,13 @@ export class PolygonService {
         }
       }, 0);
 
-      const dates = polygons.map(p => p.createdAt);
-      const oldestPolygon = new Date(Math.min(...dates.map(d => d.getTime())));
-      const newestPolygon = new Date(Math.max(...dates.map(d => d.getTime())));
+      const dates = polygons.map((p: any) => p.createdAt);
+      const oldestPolygon = new Date(
+        Math.min(...dates.map((d: Date) => d.getTime()))
+      );
+      const newestPolygon = new Date(
+        Math.max(...dates.map((d: Date) => d.getTime()))
+      );
 
       return {
         totalPolygons: count,

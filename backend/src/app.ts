@@ -25,9 +25,10 @@ app.use(
 // CORS configuration
 app.use(
   cors({
-    origin:
-      process.env.NODE_ENV === 'production'
-        ? ['http://localhost:3000', 'http://localhost:5173'] // Add your production domains
+    origin: process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+      : process.env.NODE_ENV === 'production'
+        ? ['http://localhost:3000', 'http://localhost:5173']
         : true,
     credentials: true,
   })

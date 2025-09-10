@@ -8,39 +8,6 @@ export const PolygonItem: React.FC<PolygonItemProps> = ({
   onDelete,
   onSelect,
 }) => {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const calculateArea = () => {
-    if (polygon.points.length < 3) return 0;
-
-    let area = 0;
-    const n = polygon.points.length;
-
-    for (let i = 0; i < n; i++) {
-      const j = (i + 1) % n;
-      const pi = polygon.points[i];
-      const pj = polygon.points[j];
-
-      if (pi && pj) {
-        area += pi.x * pj.y;
-        area -= pj.x * pi.y;
-      }
-    }
-
-    return Math.abs(area) / 2;
-  };
-
-  const area = calculateArea();
-
   return (
     <div
       className={clsx(
@@ -52,20 +19,10 @@ export const PolygonItem: React.FC<PolygonItemProps> = ({
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <h3 className="font-medium text-gray-900 truncate">{polygon.name}</h3>
-          <div className="mt-2 space-y-1 text-sm text-gray-600">
+          <div className="mt-2 text-sm text-gray-600">
             <div className="flex items-center justify-between">
               <span>Points:</span>
               <span className="font-medium">{polygon.points.length}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>Area:</span>
-              <span className="font-medium">{area.toFixed(1)} px²</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>Created:</span>
-              <span className="font-medium">
-                {formatDate(polygon.createdAt)}
-              </span>
             </div>
           </div>
         </div>

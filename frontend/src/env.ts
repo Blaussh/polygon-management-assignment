@@ -38,8 +38,8 @@ function getEnvBoolean(key: string, defaultValue: boolean): boolean {
 export const config: Config = {
   API_URL: getEnvVar('VITE_API_URL', 'http://localhost:3001'),
   API_TIMEOUT: getEnvNumber('VITE_API_TIMEOUT', 15000),
-  CANVAS_WIDTH: getEnvNumber('VITE_CANVAS_WIDTH', 1920),
-  CANVAS_HEIGHT: getEnvNumber('VITE_CANVAS_HEIGHT', 1080),
+  CANVAS_WIDTH: getEnvNumber('VITE_CANVAS_WIDTH', 1200),
+  CANVAS_HEIGHT: getEnvNumber('VITE_CANVAS_HEIGHT', 800),
   BACKGROUND_IMAGE_URL: getEnvVar(
     'VITE_BACKGROUND_IMAGE_URL',
     'https://picsum.photos/1920/1080'

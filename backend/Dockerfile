@@ -5,25 +5,32 @@ FROM node:20-alpine AS base
 WORKDIR /app
 
 # Install dependencies needed for native modules
-RUN apk add --no-cache python3 make g++ sqlite
+RUN apk add --no-cache python3 make g++ sqlite openssl
 
 # Copy package files
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --only=production && npm cache clean --force
 
 # Development stage
 FROM base AS development
-RUN npm ci
+RUN npm install
 COPY . .
 EXPOSE 3001
 CMD ["npm", "run", "dev"]
 
 # Build stage
-FROM base AS build
-RUN npm ci
+FROM node:20-alpine AS build
+WORKDIR /app
+RUN apk add --no-cache python3 make g++ sqlite openssl
+COPY package*.json ./
+RUN npm install
 COPY . .
+RUN mkdir -p /app/data
+RUN npx prisma generate
+ENV DATABASE_URL="file:/app/data/database.db"
+RUN npx prisma db push
 RUN npm run build
 
 # Production stage
@@ -34,14 +41,17 @@ WORKDIR /app
 
 # Install only production dependencies
 COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --only=production && npm cache clean --force
 
 # Copy built application
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=build /app/start.sh ./start.sh
+COPY --from=build /app/data ./data
 
-# Install sqlite for production
-RUN apk add --no-cache sqlite
+# Install sqlite and openssl for production
+RUN apk add --no-cache sqlite openssl
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs
@@ -49,6 +59,9 @@ RUN adduser -S nodejs -u 1001
 
 # Create data directory for SQLite
 RUN mkdir -p /app/data && chown -R nodejs:nodejs /app
+
+# Make startup script executable
+RUN chmod +x /app/start.sh
 
 # Switch to non-root user
 USER nodejs
@@ -61,4 +74,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3001/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
 # Start the application
-CMD ["npm", "start"]
+CMD ["./start.sh"]

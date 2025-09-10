@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci && npm cache clean --force
+RUN npm install && npm cache clean --force
 
 # Development stage
 FROM base AS development
@@ -19,6 +19,7 @@ CMD ["npm", "run", "dev", "--", "--host"]
 # Build stage
 FROM base AS build
 COPY . .
+ENV VITE_API_URL=http://localhost:3001
 RUN npm run build
 
 # Production stage - Use nginx to serve static files

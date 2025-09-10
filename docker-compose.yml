@@ -13,7 +13,7 @@ services:
       - NODE_ENV=production
       - PORT=3001
       - DATABASE_URL=file:/app/data/database.db
-      - CORS_ORIGIN=http://localhost
+      - CORS_ORIGIN=http://localhost,http://frontend
     ports:
       - "3001:3001"
     volumes:

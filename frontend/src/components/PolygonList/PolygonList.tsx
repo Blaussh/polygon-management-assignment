@@ -95,29 +95,6 @@ export const PolygonList: React.FC<PolygonListProps> = ({
           ))}
         </div>
       </div>
-
-      {/* Summary Stats */}
-      <div className="p-4 border-t border-gray-200 bg-gray-50">
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="text-gray-600">Total Points:</span>
-            <span className="ml-2 font-medium">
-              {polygons.reduce((sum, p) => sum + p.points.length, 0)}
-            </span>
-          </div>
-          <div>
-            <span className="text-gray-600">Avg Points:</span>
-            <span className="ml-2 font-medium">
-              {polygons.length > 0
-                ? (
-                    polygons.reduce((sum, p) => sum + p.points.length, 0) /
-                    polygons.length
-                  ).toFixed(1)
-                : '0'}
-            </span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

@@ -210,7 +210,7 @@ export const PolygonCanvas: React.FC<
           )}
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap min-h-[60px] items-start">
+        <div className="flex items-center gap-3 flex-wrap h-[60px] items-start">
           {isDrawing ? (
             <>
               <div className="text-xs text-gray-600">
@@ -272,17 +272,14 @@ export const PolygonCanvas: React.FC<
             ref={canvasRef}
             width={config.CANVAS_WIDTH}
             height={config.CANVAS_HEIGHT}
-            className="polygon-canvas border border-gray-300 rounded-lg shadow-sm max-w-full max-h-full"
+            className="polygon-canvas border border-gray-300 rounded-lg shadow-sm"
             onClick={handleCanvasClick}
             onDoubleClick={handleCanvasDoubleClick}
             onMouseDown={handleCanvasMouseDown}
             onMouseMove={handleCanvasMouseMove}
             style={{
-              width: 'auto',
-              height: 'auto',
-              maxWidth: 'calc(100% - 2rem)',
-              maxHeight: 'calc(100% - 2rem)',
-              objectFit: 'contain',
+              width: `${config.CANVAS_WIDTH}px`,
+              height: `${config.CANVAS_HEIGHT}px`,
               cursor: canvasState.isDrawing ? 'crosshair' : 'default',
             }}
           />
