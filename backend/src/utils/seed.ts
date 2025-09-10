@@ -47,9 +47,15 @@ async function seedDatabase(): Promise<void> {
   try {
     logger.info('Starting database seeding...');
 
-    // Clear existing data
-    await prisma.polygon.deleteMany();
-    logger.info('Cleared existing polygons');
+    // Check if database already has polygons
+    const existingPolygonCount = await prisma.polygon.count();
+    
+    if (existingPolygonCount > 0) {
+      logger.info(`Database already contains ${existingPolygonCount} polygons. Skipping seeding to preserve existing data.`);
+      return;
+    }
+
+    logger.info('Database is empty. Seeding with sample polygons...');
 
     // Insert sample polygons
     for (const polygon of samplePolygons) {

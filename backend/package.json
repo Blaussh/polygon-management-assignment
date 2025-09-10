@@ -19,6 +19,7 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:seed": "tsx src/utils/seed.ts",
+    "db:seed:force": "tsx -e \"import('./src/utils/seed.js').then(m => m.seedDatabase())\"",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
