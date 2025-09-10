@@ -47,7 +47,6 @@ RUN npm install --only=production && npm cache clean --force
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=build /app/start.sh ./start.sh
 COPY --from=build /app/data ./data
 
 # Install sqlite and openssl for production
@@ -58,10 +57,14 @@ RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nodejs -u 1001
 
 # Create data directory for SQLite
-RUN mkdir -p /app/data && chown -R nodejs:nodejs /app
+RUN mkdir -p /app/data
 
-# Make startup script executable
+# Copy and set up startup script
+COPY start.sh ./start.sh
 RUN chmod +x /app/start.sh
+
+# Set ownership of all files to nodejs user
+RUN chown -R nodejs:nodejs /app
 
 # Switch to non-root user
 USER nodejs
@@ -74,4 +77,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3001/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
 # Start the application
-CMD ["./start.sh"]
+CMD ["sh", "-c", "echo 'Waiting for database to be ready...' && sleep 2 && echo 'Running database migrations...' && npx prisma db push && echo 'Seeding database...' && node dist/utils/seed.js && echo 'Starting application...' && exec npm start"]
